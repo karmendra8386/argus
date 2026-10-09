@@ -1,0 +1,27 @@
+# Argus security policy: named profiles, one per key.
+default_profile: standard
+
+blocklist_patterns:
+  # - "competitor-name"
+
+profiles:
+  # Maximum caution: injections blocked, everything enforced both ways.
+  strict:
+    secrets: block
+    pii: redact
+    prompt_injection: block
+    blocklist: block
+
+  # Recommended default: secrets never pass, PII redacted, injections flagged.
+  standard:
+    secrets: block
+    pii: redact
+    prompt_injection: flag
+    blocklist: block
+
+  # Visibility without enforcement: watch what fires before tightening.
+  permissive:
+    secrets: block
+    pii: flag
+    prompt_injection: flag
+    blocklist: allow

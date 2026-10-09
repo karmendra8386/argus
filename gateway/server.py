@@ -24,23 +24,31 @@ from .ledger import CallEntry, Ledger
 from .providers.base import ChatMessage, ChatRequest, ProviderError
 from .router import select_route
 from .security.audit import AuditEvent, AuditLog
+from .security.loader import load_profiles
 from .security.policy import PolicyEngine, default_policy
 
 
 def create_app(
     config: GatewayConfig,
     policy: PolicyEngine | None = None,
+    policy_file: str | None = None,
     max_input_chars: int = 100_000,
 ) -> FastAPI:
     keys = KeyStore(config.db_path)
     ledger = Ledger(config.db_path)
     audit = AuditLog(config.db_path)
-    engine = policy or default_policy()
+    if policy_file:
+        profiles, default_profile = load_profiles(policy_file)
+    elif policy:
+        profiles, default_profile = {"standard": policy}, "standard"
+    else:
+        profiles, default_profile = {"standard": default_policy()}, "standard"
     app = FastAPI(title="argus", version="0.1.0")
     app.state.config = config
     app.state.keys = keys
     app.state.ledger = ledger
     app.state.audit = audit
+    app.state.profiles = profiles
 
     def require_key(authorization: str | None = Header(default=None)) -> KeyRecord:
         if not authorization or not authorization.startswith("Bearer "):
@@ -84,7 +92,8 @@ def create_app(
         if len(full_in) > max_input_chars:
             raise HTTPException(400, f"input exceeds {max_input_chars} chars")
 
-        # --- security: input ---
+        # --- security: input (per-key policy profile) ---
+        engine = profiles.get(key.policy_profile) or profiles[default_profile]
         screened = engine.evaluate(full_in, "in")
         if screened.blocked:
             detector, _, category = screened.blocked.partition(":")
@@ -177,14 +186,23 @@ def create_app(
     # ---------------- admin ----------------
     @app.post("/admin/keys", dependencies=[Depends(require_admin)])
     def admin_create_key(body: dict):
+        profile = body.get("policy_profile", default_profile)
+        if profile not in profiles:
+            raise HTTPException(400, f"unknown policy profile {profile!r}")
         rec, raw = keys.create(
             name=body.get("name", "key"),
             budget_usd=float(body.get("budget_usd", config.default_budget_usd)),
             period=body.get("period", "monthly"),
             mode=body.get("mode", config.default_budget_mode),
+            policy_profile=profile,
         )
         return {"id": rec.id, "name": rec.name, "key": raw,
-                "budget_usd": rec.budget_usd, "period": rec.period, "mode": rec.mode}
+                "budget_usd": rec.budget_usd, "period": rec.period,
+                "mode": rec.mode, "policy_profile": rec.policy_profile}
+
+    @app.get("/admin/profiles", dependencies=[Depends(require_admin)])
+    def admin_profiles():
+        return {"profiles": sorted(profiles.keys()), "default": default_profile}
 
     @app.get("/admin/spend", dependencies=[Depends(require_admin)])
     def admin_spend():
@@ -206,7 +224,9 @@ def create_app(
     return app
 
 
-def run(host: str = "127.0.0.1", port: int = 4000):  # entry point: aigw
+def run(host: str = "127.0.0.1", port: int = 4000):  # entry point: argus
+    import os
+
     import uvicorn
 
     from tokenecon import DEFAULT_TIERS
@@ -219,4 +239,5 @@ def run(host: str = "127.0.0.1", port: int = 4000):  # entry point: aigw
         ProviderEntry(provider=mock, tier=DEFAULT_TIERS[0], models=["mock-small"]),
         ProviderEntry(provider=mock, tier=DEFAULT_TIERS[2], models=["mock-large"]),
     ])
-    uvicorn.run(create_app(cfg), host=host, port=port)
+    policy_file = os.environ.get("AIGW_POLICY_FILE")
+    uvicorn.run(create_app(cfg, policy_file=policy_file), host=host, port=port)
