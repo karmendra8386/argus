@@ -1,0 +1,92 @@
+# Argus — the security layer for all AI models
+
+An OpenAI-compatible gateway that sits in front of **any** LLM — OpenAI,
+Anthropic, Bedrock, Gemini, Mistral, vLLM, Ollama, anything with an
+OpenAI-shaped endpoint — and enforces security policy before a model ever
+sees your data.
+
+Every request passes through the policy engine on the way in and on the way
+out. Cost intelligence (tiered routing, graceful budgets, per-task
+attribution) rides along via [tokenecon](https://pypi.org/project/tokenecon/),
+but security is the product.
+
+## The security layer
+
+```
+request -> auth -> INPUT policy -> budget -> route -> model
+                                              -> OUTPUT policy -> audit -> response
+```
+
+**Pluggable detectors** (each scans, the policy decides):
+
+| Detector | Catches | Default action |
+|---|---|---|
+| Secrets | AWS keys, private keys, GitHub/OpenAI tokens, `password = ...` | **block** — never reaches a model |
+| PII | emails, phones, SSNs, credit cards, IPs | **redact** — `[REDACTED:EMAIL]`, request continues |
+| Prompt injection | "ignore previous instructions", role overrides, system-prompt probes, known jailbreaks | **flag** — allowed but marked (one flag away from block) |
+| Blocklist | your own regexes | **block** |
+
+**Policy engine:** per-direction rules (`in` / `out` / `both`) with four
+actions — `allow`, `redact`, `block`, `flag`. Add an ML-based detector later
+by subclassing `Detector`; no other code changes.
+
+**Audit log:** every decision recorded — timestamp, key, task, detector,
+action, redacted snippet. Raw PII and secrets never touch the audit trail.
+`GET /admin/audit` for compliance review.
+
+## Quickstart
+
+```bash
+pip install argus-gateway
+export AIGW_MASTER_KEY="sk-admin-secret"
+export OPENAI_API_KEY="..."
+argus   # serves on 127.0.0.1:4000
+```
+
+Point any OpenAI client at it — one `base_url` change:
+
+```python
+import openai
+client = openai.OpenAI(api_key="<virtual-key>", base_url="http://localhost:4000/v1")
+```
+
+Self-hosted models sit behind the same layer:
+
+```python
+from gateway.providers.generic import GenericProvider
+# vLLM, Ollama, llama.cpp — any OpenAI-shaped endpoint
+```
+
+Every response carries what happened:
+
+```json
+"gateway": {
+  "provider": "openai", "tier": "small", "difficulty": 0.17,
+  "cost_usd": 0.000004, "degraded": false,
+  "security": {"redactions": ["pii:EMAIL"], "flags": ["prompt_injection:INSTRUCTION_OVERRIDE"]}
+}
+```
+
+## Also inside: cost intelligence
+
+- **Tiered routing** — requests scored for difficulty, cheapest capable tier wins
+- **Graceful budgets** — over budget? Falls back to the cheapest tier and flags
+  `degraded: true` instead of failing (hard-stop mode available)
+- **Per-task attribution** — `X-Task-Id` groups an agentic run's turns into one
+  costed task: `GET /admin/tasks/{id}`
+
+## Admin API (`X-Admin-Key` required)
+
+- `POST /admin/keys` — issue virtual keys with budgets (`degrade`/`hard`, daily/monthly)
+- `GET /admin/spend`, `GET /admin/keys/{id}/spend` — spend tracking
+- `GET /admin/tasks/{task_id}` — per-task cost breakdown
+- `GET /admin/audit?limit=&key_id=` — security decisions
+
+## Roadmap
+
+Streaming (SSE), Bedrock/Gemini/Mistral adapters, semantic caching,
+OTEL/Prometheus export, admin UI, SSO/RBAC, ML-based injection detector.
+
+## License
+
+MIT — Karmendra Pandey.
