@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+type: software
+title: "Argus"
+authors:
+  - family-names: Pandey
+    given-names: Karmendra
+version: 0.1.0
+date-released: 2026-10-09
+repository-code: "https://github.com/karmendra8386/argus"
+url: "https://github.com/karmendra8386/argus"
+license: MIT
+abstract: "An OpenAI-compatible policy gateway that sits in front of any LLM and enforces security policy on every request and response: it blocks secrets, redacts PII, flags prompt injection, applies per-key policy profiles and budgets, and records every decision in an audit log."
