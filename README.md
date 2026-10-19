@@ -1,5 +1,9 @@
 # Argus — the security layer for all AI models
 
+[![PyPI version](https://img.shields.io/pypi/v/argus-gateway.svg)](https://pypi.org/project/argus-gateway/)
+[![PyPI downloads](https://img.shields.io/pypi/dm/argus-gateway.svg)](https://pypi.org/project/argus-gateway/)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23427027-blue)](https://doi.org/10.5281/zenodo.23427027)
+
 An OpenAI-compatible gateway that sits in front of **any** LLM — OpenAI,
 Anthropic, Bedrock, Gemini, Mistral, vLLM, Ollama, anything with an
 OpenAI-shaped endpoint — and enforces security policy before a model ever
