@@ -34,6 +34,12 @@ request -> auth -> INPUT policy -> budget -> route -> model
 actions — `allow`, `redact`, `block`, `flag`. Add an ML-based detector later
 by subclassing `Detector`; no other code changes.
 
+**Customizable without code:** write `policy.yaml` with named profiles
+(`strict`, `standard`, `permissive`, or your own), point the gateway at it
+with `AIGW_POLICY_FILE`, and assign a profile per virtual key — one team's
+keys block injections while another's only flag them. `GET /admin/profiles`
+lists what's loaded.
+
 **Audit log:** every decision recorded — timestamp, key, task, detector,
 action, redacted snippet. Raw PII and secrets never touch the audit trail.
 `GET /admin/audit` for compliance review.
@@ -90,6 +96,23 @@ Every response carries what happened:
 
 Streaming (SSE), Bedrock/Gemini/Mistral adapters, semantic caching,
 OTEL/Prometheus export, admin UI, SSO/RBAC, ML-based injection detector.
+
+## Cite
+
+If you use this software in your work, please cite it:
+
+```bibtex
+@software{pandey_argus_2026,
+  author = {Pandey, Karmendra},
+  title = {Argus},
+  version = {0.1.1},
+  doi = {10.5281/zenodo.23427027},
+  url = {https://github.com/karmendra8386/argus},
+  date = {2026-10-19}
+}
+```
+
+A `CITATION.cff` is included for automated citation tooling.
 
 ## License
 
