@@ -1,8 +1,8 @@
 """Audit log: every security decision, queryable per key/task.
 
-Snippets are stored redacted — the audit trail never retains raw PII or
-secrets. This is the compliance backbone: who sent what, what fired, what
-happened.
+PII snippets are supplied from redacted text, and blocked events from the
+secrets detector store a placeholder instead of any payload text. This is
+the compliance backbone: who sent what, what fired, what happened.
 """
 
 from __future__ import annotations
@@ -46,13 +46,18 @@ class AuditLog:
             c.executescript(_SCHEMA)
 
     def record(self, event: AuditEvent) -> None:
+        snippet = event.snippet
+        if event.detector == "secrets" and event.action == "block":
+            # The caller may pass the full payload for context, but a blocked
+            # secret must not be retained in the audit database.
+            snippet = "[REDACTED:SECRET]"
         with sqlite3.connect(self.db_path) as c:
             c.execute(
                 "INSERT INTO audit (ts, key_id, task_id, direction, detector,"
                 " category, action, snippet) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (time.time(), event.key_id, event.task_id, event.direction,
                  event.detector, event.category, event.action,
-                 event.snippet[:160]),
+                 snippet[:160]),
             )
 
     def recent(self, limit: int = 100, key_id: int | None = None) -> list[dict]:

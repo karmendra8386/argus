@@ -77,3 +77,15 @@ def test_audit_log_roundtrip(tmp_path):
     assert events[0]["detector"] == "secrets"
     assert events[0]["action"] == "block"
     assert log.recent(key_id=999) == []
+
+
+def test_audit_log_replaces_blocked_secret_snippet(tmp_path):
+    log = AuditLog(str(tmp_path / "a.db"))
+    raw_header = "-----BEGIN RSA PRIVATE KEY-----"
+    log.record(AuditEvent(
+        1, "t1", "in", "secrets", "PRIVATE_KEY", "block",
+        f"Use this key: {raw_header}",
+    ))
+    events = log.recent()
+    assert events[0]["snippet"] == "[REDACTED:SECRET]"
+    assert raw_header not in events[0]["snippet"]
