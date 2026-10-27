@@ -1,13 +1,14 @@
-# Argus — the security layer for all AI models
+# Argus — a security layer for OpenAI-compatible LLM traffic
 
 [![PyPI version](https://img.shields.io/pypi/v/argus-gateway.svg)](https://pypi.org/project/argus-gateway/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/argus-gateway.svg)](https://pypi.org/project/argus-gateway/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23427027-blue)](https://doi.org/10.5281/zenodo.23427027)
 
-An OpenAI-compatible gateway that sits in front of **any** LLM — OpenAI,
-Anthropic, Bedrock, Gemini, Mistral, vLLM, Ollama, anything with an
-OpenAI-shaped endpoint — and enforces security policy before a model ever
-sees your data.
+An OpenAI-compatible gateway that enforces security policy before a model
+sees your data. Argus ships native OpenAI and Anthropic provider adapters,
+and its generic adapter can sit in front of OpenAI-shaped endpoints such as
+vLLM and Ollama. Bedrock, Gemini, and Mistral adapters are roadmap items,
+not part of the current release.
 
 Every request passes through the policy engine on the way in and on the way
 out. Cost intelligence (tiered routing, graceful budgets, per-task
@@ -41,41 +42,89 @@ keys block injections while another's only flag them. `GET /admin/profiles`
 lists what's loaded.
 
 **Audit log:** every decision recorded — timestamp, key, task, detector,
-action, redacted snippet. Raw PII and secrets never touch the audit trail.
+and action. Redacted PII is recorded in its redacted form; blocked events
+from the secrets detector store `[REDACTED:SECRET]` instead of payload text.
 `GET /admin/audit` for compliance review.
 
 ## Quickstart
 
+This five-minute demo uses the built-in mock models, so it needs no
+provider API key.
+
+Install Argus, set a master (admin) key, and start the gateway:
+
 ```bash
 pip install argus-gateway
 export AIGW_MASTER_KEY="sk-admin-secret"
-export OPENAI_API_KEY="..."
-argus   # serves on 127.0.0.1:4000
+argus
 ```
 
-Point any OpenAI client at it — one `base_url` change:
+`argus` serves on `127.0.0.1:4000` with `mock-small` and `mock-large`.
+Leave it running and use a second terminal for the remaining commands.
 
-```python
-import openai
-client = openai.OpenAI(api_key="<virtual-key>", base_url="http://localhost:4000/v1")
+In the second terminal, create a virtual key. The response contains the
+raw key only once, so the commands below print it and save it in a shell
+variable for the next calls:
+
+```bash
+export AIGW_MASTER_KEY="sk-admin-secret"
+KEY_RESPONSE=$(curl -s -X POST http://127.0.0.1:4000/admin/keys \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: $AIGW_MASTER_KEY" \
+  -d '{"name":"demo","budget_usd":10}')
+printf '%s\n' "$KEY_RESPONSE"
+export AIGW_VIRTUAL_KEY=$(printf '%s' "$KEY_RESPONSE" | python3 -c 'import json, sys; print(json.load(sys.stdin)["key"])')
 ```
 
-Self-hosted models sit behind the same layer:
+Send text containing a private-key header. Argus blocks it before the
+mock model is called:
 
-```python
-from gateway.providers.generic import GenericProvider
-# vLLM, Ollama, llama.cpp — any OpenAI-shaped endpoint
+```bash
+curl -i -X POST http://127.0.0.1:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AIGW_VIRTUAL_KEY" \
+  -d '{"model":"mock-small","messages":[{"role":"user","content":"Use this key: -----BEGIN RSA PRIVATE KEY-----"}]}'
 ```
 
-Every response carries what happened:
+The response is HTTP 400:
+
+```json
+{"detail":"blocked by security policy: secrets:PRIVATE_KEY"}
+```
+
+Now send an email address:
+
+```bash
+curl -s -X POST http://127.0.0.1:4000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AIGW_VIRTUAL_KEY" \
+  -d '{"model":"mock-small","messages":[{"role":"user","content":"Email me at jane@example.com"}]}'
+```
+
+The call returns HTTP 200. Its `gateway` object is:
 
 ```json
 "gateway": {
-  "provider": "openai", "tier": "small", "difficulty": 0.17,
-  "cost_usd": 0.000004, "degraded": false,
-  "security": {"redactions": ["pii:EMAIL"], "flags": ["prompt_injection:INSTRUCTION_OVERRIDE"]}
+  "provider": "mock", "tier": "small", "difficulty": 0.0,
+  "cost_usd": 3e-06, "degraded": false,
+  "security": {"redactions": ["pii:EMAIL"], "flags": []}
 }
 ```
+
+Finally, inspect the audit log:
+
+```bash
+curl -s "http://127.0.0.1:4000/admin/audit?limit=10" \
+  -H "X-Admin-Key: $AIGW_MASTER_KEY"
+```
+
+Events are returned newest first. The email event's snippet is
+`Email me at [REDACTED:EMAIL]`; the blocked private-key event has
+category `PRIVATE_KEY`, action `block`, and snippet `[REDACTED:SECRET]`.
+
+The packaged `argus` command is this mock-only demo. Real backends are
+configured in code with the native OpenAI and Anthropic providers or with
+`GenericProvider` for an OpenAI-shaped endpoint.
 
 ## Also inside: cost intelligence
 
