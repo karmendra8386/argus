@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "argus-gateway"
-version = "0.1.1"
+version = "0.1.2"
 description = "Argus: a security layer for OpenAI-compatible LLM traffic — an OpenAI-compatible AI gateway with pluggable threat detectors, policy enforcement, audit, and cost intelligence"
 readme = "README.md"
 requires-python = ">=3.9"

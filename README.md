@@ -154,10 +154,10 @@ If you use this software in your work, please cite it:
 @software{pandey_argus_2026,
   author = {Pandey, Karmendra},
   title = {Argus},
-  version = {0.1.1},
+  version = {0.1.2},
   doi = {10.5281/zenodo.23427027},
   url = {https://github.com/karmendra8386/argus},
-  date = {2026-10-19}
+  date = {2026-10-28}
 }
 ```
 

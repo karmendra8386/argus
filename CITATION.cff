@@ -6,8 +6,8 @@ authors:
   - family-names: Pandey
     given-names: Karmendra
     orcid: "https://orcid.org/0009-0000-3461-9889"
-version: 0.1.1
-date-released: 2026-10-19
+version: 0.1.2
+date-released: 2026-10-28
 doi: 10.5281/zenodo.23427027
 repository-code: "https://github.com/karmendra8386/argus"
 url: "https://github.com/karmendra8386/argus"
