@@ -161,6 +161,24 @@ If you use this software in your work, please cite it:
 }
 ```
 
+**Companion preprint**
+
+> K. Pandey, "Your AI Agent Is Now an IAM Principal: Identity Architecture
+> for Autonomous Agents," Zenodo, DOI
+> [10.5281/zenodo.23199763](https://doi.org/10.5281/zenodo.23199763), 2026.
+
+```bibtex
+@misc{pandey2026iamprincipal,
+  author       = {Pandey, Karmendra},
+  title        = {Your AI Agent Is Now an IAM Principal: Identity
+                  Architecture for Autonomous Agents},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.23199763},
+  url          = {https://doi.org/10.5281/zenodo.23199763}
+}
+```
+
 A `CITATION.cff` is included for automated citation tooling.
 
 ## License
