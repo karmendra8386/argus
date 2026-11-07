@@ -180,6 +180,7 @@ If you use this software in your work, please cite it:
 ```
 
 A `CITATION.cff` is included for automated citation tooling.
+Write-up: [Every LLM Call Should Pass Through a Security Layer — Here's the Pattern](https://builder.aws.com/content/3KT003C7DNJxr4m20Bu4Teoqm2U/every-llm-call-should-pass-through-a-security-layer-heres-the-pattern) — AWS Builder Center
 
 ## License
 
