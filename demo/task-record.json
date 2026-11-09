@@ -1,0 +1,38 @@
+{
+ "task_id": "argus-chat-zs676l6",
+ "calls": 3,
+ "total_cost_usd": 0.000182,
+ "total_tokens": 605,
+ "breakdown": [
+  {
+   "ts": 1794203845.3904097,
+   "provider": "ollama",
+   "model": "llama32-local",
+   "tier": "small",
+   "input_tokens": 83,
+   "output_tokens": 38,
+   "cost_usd": 4.7000000000000004e-05,
+   "degraded": false
+  },
+  {
+   "ts": 1794203853.4877698,
+   "provider": "ollama",
+   "model": "llama32-local",
+   "tier": "small",
+   "input_tokens": 171,
+   "output_tokens": 57,
+   "cost_usd": 7.980000000000002e-05,
+   "degraded": false
+  },
+  {
+   "ts": 1794203858.487767,
+   "provider": "ollama",
+   "model": "llama32-local",
+   "tier": "small",
+   "input_tokens": 249,
+   "output_tokens": 7,
+   "cost_usd": 5.54e-05,
+   "degraded": false
+  }
+ ]
+}

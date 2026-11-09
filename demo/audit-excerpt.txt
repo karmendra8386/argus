@@ -1,0 +1,11 @@
+Audit drawer contents captured from the Argus Chat UI after the session
+(Argus /admin/audit, newest first — direction, detector, category, action, snippet):
+
+Dir	Detector	Category	Action	Snippet
+in	prompt_injection	SYSTEM_PROMPT_PROBE	flag	Summarise in one sentence: The city council voted on Tuesday to expand the bus network, adding twelve new routes and extending service hours until midnight, in
+in	prompt_injection	INSTRUCTION_OVERRIDE	flag	Summarise in one sentence: The city council voted on Tuesday to expand the bus network, adding twelve new routes and extending service hours until midnight, in
+in	pii	PHONE	redact	Summarise in one sentence: The city council voted on Tuesday to expand the bus network, adding twelve new routes and extending service hours until midnight, in
+in	pii	EMAIL	redact	Summarise in one sentence: The city council voted on Tuesday to expand the bus network, adding twelve new routes and extending service hours until midnight, in
+in	secrets	AWS_KEY	block	[REDACTED:SECRET]
+in	pii	PHONE	redact	Summarise in one sentence: The city council voted on Tuesday to expand the bus network, adding twelve new routes and extending service hours until midnight, in
+in	pii	EMAIL	redact	Summarise in one sentence: The city council voted on Tuesday to expand the bus network, adding twelve new routes and extending service hours until midnight, in

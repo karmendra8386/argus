@@ -15,6 +15,32 @@ out. Cost intelligence (tiered routing, graceful budgets, per-task
 attribution) rides along via [tokenecon](https://pypi.org/project/tokenecon/),
 but security is the product.
 
+## Argus Chat — the demo
+
+![Argus Chat demo](demo/demo.gif)
+
+*One live session (Nov 9, 2026) through **Argus Chat**, the integrated
+showcase front-end: a normal summary with its cost receipt, a PII-bearing
+request answered with the redactions already in place, an AWS key blocked
+before any model saw it, and a prompt injection flagged on the receipt.
+Argus's own record for the session: **3 calls, 605 tokens, $0.000182**.
+The local model was Llama 3.2 1B Instruct behind Ollama on a small CPU
+VM, mapped to tokenecon's small tier — so the dollars are shadow prices
+for comparability, not invoices. Full screenshots, the task record, the
+audit excerpt, the reproduction script, and the honest disclosures
+(including how the two earlier models behaved differently) are in
+[`demo/`](demo/).*
+
+## Works with
+
+- **[tokenecon](https://github.com/karmendra8386/agentic-ai-token-economics)** — the cost engine inside Argus: tiered routing, graceful budgets, per-task receipts. Argus Chat is where it becomes visible — every answer carries its receipt.
+- **[mcplens](https://github.com/karmendra8386/mcplens)** — runtime vetting for MCP tool servers, so tools are graded before they connect to anything behind this gateway. The TicketDesk server built for the Argus Chat demo grades **A (100/100)**; feeding the grade into Argus's allow/deny path is the next build step.
+- **[Argus Lens](https://github.com/karmendra8386/argus-lens)** — the same don't-send-it-unguarded stance at the browser surface: Lens checks prompts before they are sent; Argus checks them at the gateway.
+- **[agent-cost-mcp-server](https://github.com/karmendra8386/agent-cost-mcp-server)** — run costs exposed to agents over MCP, from the same tokenecon accounting.
+- **[PersistAIBench](https://github.com/karmendra8386/persistbench-bench)** and **[Argus-Bench](https://doi.org/10.5281/zenodo.23877366)** — the benchmarks that score what flows through: persistence failures over long runs, and 264 frozen screening cases for the gateway layer itself.
+
+**The connected set** — one thread through all of it: what an agent did, what it cost, and whether it should have been allowed. [Argus](https://github.com/karmendra8386/argus) · [tokenecon](https://github.com/karmendra8386/agentic-ai-token-economics) · [mcplens](https://github.com/karmendra8386/mcplens) · [agent-cost-mcp-server](https://github.com/karmendra8386/agent-cost-mcp-server) · [Argus Lens](https://github.com/karmendra8386/argus-lens) · [PersistAIBench](https://github.com/karmendra8386/persistbench-bench) · [Argus-Bench](https://doi.org/10.5281/zenodo.23877366)
+
 ## The security layer
 
 ```
