@@ -65,9 +65,12 @@ class PolicyEngine:
     def evaluate(self, text: str, direction: str) -> PolicyResult:
         result = PolicyResult(text=text)
         pi_acted = False  # a prompt-injection finding was acted on
+        pi_conf = 0.0     # strongest prompt-injection pattern confidence
         for detector in self.detectors.values():
             for f in detector.scan(text):
                 result.findings_count += 1
+                if f.detector == "prompt_injection":
+                    pi_conf = max(pi_conf, f.confidence)
                 action = self._rule_for(f.detector, f.category, direction)
                 if self.profile is not None and \
                         f.confidence < self.profile.threshold_for(f.detector):
@@ -88,18 +91,22 @@ class PolicyEngine:
                     result.redactions.append(tag)
                 elif action == "flag":
                     result.flags.append(tag)
-        self._run_judge(text, direction, result, pi_acted)
+        self._run_judge(text, direction, result, pi_acted, pi_conf)
         return result
 
     def _run_judge(self, text: str, direction: str, result: PolicyResult,
-                   pi_acted: bool) -> None:
+                   pi_acted: bool, pi_conf: float = 0.0) -> None:
         """Second stage: the LLM judge, when the profile enables it.
 
         Input direction only. "gated" runs it only when the pattern
         stage acted on no prompt-injection finding — the judge exists
-        for the attacks patterns miss. A blocked result never reaches
-        here (evaluate returns first). Judge positives flag or block
-        at the profile's confidence bars.
+        for the attacks patterns miss. "auto" runs it whenever the
+        pattern stage did not block, and decides on the *combined*
+        confidence (noisy-or of the strongest pattern confidence and
+        the judge's): clear pattern cases never reach it, borderline
+        pattern evidence corroborates the judge, and a judge positive
+        on its own must clear the high block bar alone. A blocked
+        result never reaches here (evaluate returns first).
         """
         if self.judge is None or self.profile is None or direction != "in":
             return
@@ -111,10 +118,13 @@ class PolicyEngine:
         for f in self.judge.scan(text):
             result.findings_count += 1
             tag = f"{f.detector}:{f.category}"
-            if f.confidence >= settings.block_at:
+            confidence = f.confidence
+            if settings.mode == "auto" and pi_conf > 0.0:
+                confidence = 1.0 - (1.0 - pi_conf) * (1.0 - f.confidence)
+            if confidence >= settings.block_at:
                 result.blocked = tag
                 return
-            if f.confidence >= settings.flag_at:
+            if confidence >= settings.flag_at:
                 result.flags.append(tag)
 
 

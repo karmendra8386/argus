@@ -21,8 +21,8 @@ def policy_file(tmp_path):
 
 def test_load_profiles(policy_file):
     engines, default = load_profiles(policy_file)
-    assert default == "balanced"
-    assert set(engines) == {"strict", "balanced", "quiet", "standard"}
+    assert default == "auto"
+    assert set(engines) == {"auto", "strict", "balanced", "quiet", "standard"}
 
 
 def test_strict_blocks_injection_standard_flags(policy_file):
@@ -63,17 +63,24 @@ def test_per_key_profile_enforced(tmp_path, policy_file):
 
     strict = c.post("/admin/keys", json={"name": "s", "policy_profile": "strict"},
                     headers=admin).json()
+    balanced = c.post("/admin/keys", json={"name": "b", "policy_profile": "balanced"},
+                      headers=admin).json()
     defaulted = c.post("/admin/keys", json={"name": "t"}, headers=admin).json()
-    assert defaulted["policy_profile"] == "balanced"
+    assert defaulted["policy_profile"] == "auto"
 
     body = {"model": "m", "messages": [{"role": "user", "content": INJECTION}]}
     r_strict = c.post("/v1/chat/completions", json=body,
                       headers={"Authorization": f"Bearer {strict['key']}"})
+    r_balanced = c.post("/v1/chat/completions", json=body,
+                        headers={"Authorization": f"Bearer {balanced['key']}"})
     r_default = c.post("/v1/chat/completions", json=body,
                        headers={"Authorization": f"Bearer {defaulted['key']}"})
     assert r_strict.status_code == 400
-    assert r_default.status_code == 200
-    assert "prompt_injection" in str(r_default.json()["gateway"]["security"]["flags"])
+    assert r_balanced.status_code == 200
+    assert "prompt_injection" in str(r_balanced.json()["gateway"]["security"]["flags"])
+    # auto: a canonical high-confidence pattern is a clear case — blocked
+    # by the pattern stage alone, no judge call needed.
+    assert r_default.status_code == 400
 
 
 def test_unknown_profile_rejected_on_key_create(tmp_path, policy_file):
@@ -86,7 +93,7 @@ def test_unknown_profile_rejected_on_key_create(tmp_path, policy_file):
 def test_admin_lists_profiles(tmp_path, policy_file):
     c = _client_with_profiles(tmp_path, policy_file)
     r = c.get("/admin/profiles", headers={"x-admin-key": "a"}).json()
-    assert r["default"] == "balanced"
+    assert r["default"] == "auto"
     assert "strict" in r["profiles"]
 
 

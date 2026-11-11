@@ -73,7 +73,7 @@ def _detection_profile(name: str, rules_cfg: dict) -> DetectionProfile | None:
         if not hasattr(profile.judge, key):
             raise ValueError(f"unknown judge setting {key!r} in profile {name!r}")
         setattr(profile.judge, key, value)
-    if profile.judge.mode not in ("off", "gated", "always"):
+    if profile.judge.mode not in ("off", "gated", "always", "auto"):
         raise ValueError(
             f"invalid judge mode {profile.judge.mode!r} in profile {name!r}")
     return profile
@@ -118,18 +118,30 @@ def default_profiles_yaml() -> str:
     """Starter policy file content."""
     return """\
 # Argus security policy: named profiles, one per key.
-# strict / balanced / quiet are TUNABLE detection profiles (see
-# gateway/security/profiles.py): they set per-detector confidence
-# thresholds and whether the local LLM judge second stage runs.
-# `standard` is the legacy action-only profile, kept unchanged for
-# keys that already reference it. The judge endpoint defaults to a
-# local Ollama server; override per profile under `judge:`.
-default_profile: balanced
+# auto / strict / balanced / quiet are TUNABLE detection profiles
+# (see gateway/security/profiles.py): they set per-detector
+# confidence thresholds and whether the local LLM judge second
+# stage runs. `standard` is the legacy action-only profile, kept
+# unchanged for keys that already reference it. The judge endpoint
+# defaults to a local Ollama server; override per profile under
+# `judge:`.
+default_profile: auto
 
 blocklist_patterns:
   # - "competitor-name"
 
 profiles:
+  # Flagship, adaptive: high-confidence patterns block instantly;
+  # everything else escalates to the judge, and blocking needs a
+  # high combined pattern+judge confidence — borderline cases flag
+  # and pass, so real work is not blocked.
+  auto:
+    preset: auto
+    secrets: block
+    pii: redact
+    prompt_injection: block
+    blocklist: block
+
   # Catch everything, accept false alarms: low thresholds, injections
   # blocked, judge always on with a low block bar.
   strict:
@@ -139,8 +151,8 @@ profiles:
     prompt_injection: block
     blocklist: block
 
-  # Recommended default: patterns flag at medium confidence and up;
-  # the judge runs only on pattern misses and blocks when confident.
+  # Patterns flag at medium confidence and up; the judge runs only
+  # on pattern misses and blocks when confident.
   balanced:
     preset: balanced
     secrets: block
