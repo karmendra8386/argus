@@ -17,6 +17,14 @@ class Finding:
     category: str      # e.g. "EMAIL", "AWS_KEY", "PROMPT_INJECTION"
     severity: str      # "low" | "medium" | "high"
     match: str         # the matched text (redacted before audit/logging)
+    # 0..1 — how sure the detector is. Detection profiles threshold on
+    # this; detectors that don't set it are treated as high confidence.
+    confidence: float = 0.9
+
+
+#: Default confidence per severity for pattern-based detectors. A canonical
+#: instruction override is strong evidence; a lone "jailbreak" mention is not.
+SEVERITY_CONFIDENCE = {"high": 0.9, "medium": 0.6, "low": 0.35}
 
 
 class Detector(ABC):
@@ -38,6 +46,7 @@ class _RegexDetector(Detector):
                 findings.append(Finding(
                     detector=self.name, category=category,
                     severity=severity, match=m.group(0),
+                    confidence=SEVERITY_CONFIDENCE[severity],
                 ))
         return findings
 
@@ -105,6 +114,6 @@ class BlocklistDetector(Detector):
             if re.search(p, text, re.IGNORECASE):
                 findings.append(Finding(
                     detector=self.name, category="BLOCKED_TERM",
-                    severity="high", match=p,
+                    severity="high", match=p, confidence=0.95,
                 ))
         return findings

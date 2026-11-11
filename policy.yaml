@@ -1,27 +1,46 @@
 # Argus security policy: named profiles, one per key.
-default_profile: standard
+# strict / balanced / quiet are TUNABLE detection profiles (see
+# gateway/security/profiles.py): they set per-detector confidence
+# thresholds and whether the local LLM judge second stage runs.
+# `standard` is the legacy action-only profile, kept unchanged for
+# keys that already reference it. The judge endpoint defaults to a
+# local Ollama server; override per profile under `judge:`.
+default_profile: balanced
 
 blocklist_patterns:
   # - "competitor-name"
 
 profiles:
-  # Maximum caution: injections blocked, everything enforced both ways.
+  # Catch everything, accept false alarms: low thresholds, injections
+  # blocked, judge always on with a low block bar.
   strict:
+    preset: strict
     secrets: block
     pii: redact
     prompt_injection: block
     blocklist: block
 
-  # Recommended default: secrets never pass, PII redacted, injections flagged.
-  standard:
+  # Recommended default: patterns flag at medium confidence and up;
+  # the judge runs only on pattern misses and blocks when confident.
+  balanced:
+    preset: balanced
     secrets: block
     pii: redact
     prompt_injection: flag
     blocklist: block
 
-  # Visibility without enforcement: watch what fires before tightening.
-  permissive:
+  # Minimise false alarms: only high-confidence pattern findings act,
+  # injections flagged never blocked, judge off.
+  quiet:
+    preset: quiet
     secrets: block
-    pii: flag
+    pii: redact
     prompt_injection: flag
-    blocklist: allow
+    blocklist: block
+
+  # Legacy profile (no tuning): the pre-tuning behaviour.
+  standard:
+    secrets: block
+    pii: redact
+    prompt_injection: flag
+    blocklist: block

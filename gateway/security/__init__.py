@@ -13,7 +13,9 @@ from .detectors import (
     PromptInjectionDetector,
     SecretsDetector,
 )
+from .judge import LLMJudgeDetector
 from .policy import PolicyEngine, PolicyResult, PolicyRule, default_policy
+from .profiles import PRESETS, DetectionProfile, JudgeSettings
 
 __all__ = [
     "BlocklistDetector",
@@ -22,8 +24,12 @@ __all__ = [
     "PIIDetector",
     "PromptInjectionDetector",
     "SecretsDetector",
+    "LLMJudgeDetector",
     "PolicyEngine",
     "PolicyResult",
     "PolicyRule",
     "default_policy",
+    "DetectionProfile",
+    "JudgeSettings",
+    "PRESETS",
 ]

@@ -167,6 +167,40 @@ configured in code with the native OpenAI and Anthropic providers or with
 - `GET /admin/tasks/{task_id}` — per-task cost breakdown
 - `GET /admin/audit?limit=&key_id=` — security decisions
 
+## Tunable detection profiles
+
+Detection is a dial, not a fixed setting. Findings carry a confidence,
+and a profile decides how sure the gateway must be before it acts — and
+whether a local LLM judge reviews what the patterns miss:
+
+- **strict** — catch everything, accept false alarms: low confidence
+  thresholds, injections blocked, judge always on with a low block bar.
+- **balanced** *(default)* — patterns flag at medium confidence and up;
+  the judge runs only on pattern misses and blocks only when confident.
+- **quiet** — minimise false alarms: only high-confidence pattern
+  findings act, injections are flagged never blocked, judge off.
+- **standard** — the legacy action-only profile, unchanged.
+
+The shipped `policy.yaml` carries all four profiles; assign one per
+key with `policy_profile`. Judge settings (endpoint, model, bars) are
+per-profile YAML, and the judge is any local OpenAI-compatible
+endpoint. Measured on the frozen [Argus-Bench](https://doi.org/10.5281/zenodo.23877366)
+corpus (264 cases; judge = local Qwen2.5-0.5B, Nov 2026):
+
+| Profile | Attacks detected | Attacks blocked | Benign flagged | Benign blocked |
+|---|---|---|---|---|
+| patterns only (v1 baseline) | 15/204 (7.4%) | — | 7/60 (11.7%) | — |
+| quiet | 10/204 (4.9%) | 0 | 1/60 (1.7%) | 0 |
+| balanced | 155/204 (76.0%) | 140 | 34/60 (56.7%) | 27 |
+| strict | 155/204 (76.0%) | 155 | 34/60 (56.7%) | 34 |
+
+The dial works — quiet↔strict spans the range — and the measurement
+also shows the current limit: the 0.5B judge's self-reported
+confidence barely discriminates (it answers 0.9 or 1.0 on both
+verdicts), so balanced and strict detect identically and differ only
+in enforcement. A judge whose confidence separates is the next lever.
+
+
 ## Roadmap
 
 Streaming (SSE), Bedrock/Gemini/Mistral adapters, semantic caching,
