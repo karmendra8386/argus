@@ -43,7 +43,7 @@ def create_app(
         profiles, default_profile = {"standard": policy}, "standard"
     else:
         profiles, default_profile = {"standard": default_policy()}, "standard"
-    app = FastAPI(title="argus", version="0.1.2")
+    app = FastAPI(title="argus", version="0.2.0")
     app.state.config = config
     app.state.keys = keys
     app.state.ledger = ledger

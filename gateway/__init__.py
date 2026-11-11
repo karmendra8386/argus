@@ -4,4 +4,4 @@ An OpenAI-compatible AI gateway with pluggable threat detectors, policy
 enforcement, audit logging, and cost intelligence.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"

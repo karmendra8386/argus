@@ -6,13 +6,13 @@ authors:
   - family-names: Pandey
     given-names: Karmendra
     orcid: "https://orcid.org/0009-0000-3461-9889"
-version: 0.1.2
-date-released: 2026-10-28
+version: 0.2.0
+date-released: 2026-11-11
 doi: 10.5281/zenodo.23427027
 repository-code: "https://github.com/karmendra8386/argus"
 url: "https://github.com/karmendra8386/argus"
 license: MIT
-abstract: "An OpenAI-compatible policy gateway that sits in front of any LLM and enforces security policy on every request and response: it blocks secrets, redacts PII, flags prompt injection, applies per-key policy profiles and budgets, and records every decision in an audit log."
+abstract: "An OpenAI-compatible policy gateway that sits in front of any LLM and enforces security policy on every request and response: it blocks secrets, redacts PII, flags prompt injection, applies per-key tunable detection profiles (auto/strict/balanced/quiet, with an optional local LLM judge) and budgets, and records every decision in an audit log."
 identifiers:
   - type: doi
     value: 10.5281/zenodo.23199763
