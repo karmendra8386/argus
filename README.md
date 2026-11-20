@@ -228,6 +228,19 @@ If you use this software in your work, please cite it:
 }
 ```
 
+**Combined paper**
+
+```bibtex
+@misc{pandey2026guarded,
+  author       = {Pandey, Karmendra},
+  title        = {Guarded at the Door, Honest in Memory: Verifying AI Agents End to End — Argus-Bench and PersistAIBench},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.24269170},
+  url          = {https://doi.org/10.5281/zenodo.24269170}
+}
+```
+
 **Companion preprint**
 
 > K. Pandey, "Your AI Agent Is Now an IAM Principal: Identity Architecture
